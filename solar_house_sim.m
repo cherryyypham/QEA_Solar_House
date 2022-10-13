@@ -7,8 +7,8 @@ function [Time,T] = solar_house_sim()
     BOTTOM_PANE_HEIGHT = 0.2;
     SA_PANES = TOP_PANE_HEIGHT * b_depth + BOTTOM_PANE_HEIGHT * b_depth;
     HEIGHT_WINDOW = 2.6; % Window Height (m)
-    b_thickness = 100; % Wall thickness (m) - sweeping through
-    esu_thickness = 100; % Storage unit thickness (m) - sweeping through
+    b_thickness = 0.02; % Wall thickness (m) - sweeping through
+    esu_thickness = 0.5; % Storage unit thickness (m) - sweeping through
     
     % THERMAL-ODE-RELATED PARAMETERS
     k_walls = 0.04; % Conductivity of fiberglass insulation (W/m-K)
@@ -19,7 +19,10 @@ function [Time,T] = solar_house_sim()
     T_air = -3;
     T_storage_i = 20; % Randomly picking from given range of ()
     h_window = 1.4;
-    
+
+    v_esu = esu_thickness * b_depth * B_LENGTH;
+    C = p_esu * v_esu * c_esu;
+
     % CALCULATING AREAS
     SA_esu = (B_LENGTH - 2 * b_thickness) * b_depth;
     SA_walls_in = 2*((B_LENGTH - 2 * b_thickness) * b_depth) + B_HEIGHT * b_depth + SA_PANES;
@@ -37,21 +40,20 @@ function [Time,T] = solar_house_sim()
     
     % Time values in hours
     t_i = 0;
-    t_f = 24 * 3600;
+    t_f = 365.25 * 24 * 3600;
     
     % Initial Temperature
-    T_i = [T_air T_storage_i];
     
     % ODE CALCULATION
-    [Time, T] = ode45(@rate_func, [t_i t_f], T_i);
+    [Time, T] = ode45(@rate_func, [t_i t_f], T_storage_i);
     
     
-    function res = rate_func(t, T_i)  
+    function res = rate_func(t, T_storage_i)  
         % Solar flux
         q = -1 * cos((pi * t) / (12 * 3600)) + 224 * cos((pi * t) / (6 * 3600)) + 210;
         q_in = q * SA_window;
-        q_out = (T_i(0) - T_i(1)) / R;
-        dTdt = q_in/C - q_out/C;
+        q_out = (T_storage_i - T_air) / R;
+        dTdt = q_in/C- q_out/C;
         res = dTdt;
     end
 end
