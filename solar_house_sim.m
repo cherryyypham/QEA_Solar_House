@@ -1,4 +1,4 @@
-function [Time,T] = solar_house_sim(w_thickness, esu_thickness)
+function [Time,t_air_in] = solar_house_sim(w_thickness, esu_thickness)
     % HOUSE CONSTRUCTION PARAMETERS
     W_HEIGHT = 3.2; % Wall Height (m)
     W_DEPTH = 5; % Building Depth (m) - calculated
@@ -7,7 +7,7 @@ function [Time,T] = solar_house_sim(w_thickness, esu_thickness)
     BOTTOM_PANE_HEIGHT = 0.2;
     SA_PANES = TOP_PANE_HEIGHT * W_DEPTH + BOTTOM_PANE_HEIGHT * W_DEPTH;
     HEIGHT_WINDOW = 2.6; % Window Height (m)
-%     w_thickness = 0.02; % Wall thickness (m) - sweeping through
+%     w_thickness = 0.035; % Wall thickness (m) - sweeping through
 %     esu_thickness = 0.5; % Storage unit thickness (m) - sweeping through
     
     % THERMAL-ODE-RELATED PARAMETERS
@@ -16,7 +16,7 @@ function [Time,T] = solar_house_sim(w_thickness, esu_thickness)
     C_ESU = 800;  % ESU 
     H_INDOORS = 15;
     H_OUTDOORS = 30;
-    T_AIR = -3;
+    T_AIR_OUT = -3;
     T_storage_i = 20; % Randomly picking from given range of ()
     H_WINDOW = 1.4;
 
@@ -36,7 +36,8 @@ function [Time,T] = solar_house_sim(w_thickness, esu_thickness)
     R_floor_conv = 1./(H_INDOORS * SA_walls_in);
     R_window = 1./(H_WINDOW * SA_window);
     R_air_out = 1./(H_OUTDOORS * SA_walls_out);
-    R = R_air_in + 1./(1./(R_floor_cond + R_floor_conv) + 1./(R_window)) + R_air_out;
+    R_eq = 1./(1./(R_floor_cond + R_floor_conv) + 1./(R_window)) + R_air_out;
+    R = R_air_in + R_eq;
     
     % Time values in hours
     t_i = 0;
@@ -45,15 +46,15 @@ function [Time,T] = solar_house_sim(w_thickness, esu_thickness)
     % Initial Temperature
     
     % ODE CALCULATION
-    [Time, T] = ode45(@rate_func, [t_i t_f], T_storage_i);
-    
+    [Time, t_storage] = ode45(@rate_func, [t_i t_f], T_storage_i);
+    t_air_in = (t_storage - T_AIR_OUT).* R_eq / (R_eq + R_air_in);
     
     function res = rate_func(t, T_storage_i)  
         % Solar flux
         q = -1 * cos((pi * t) / (12 * 3600)) + 224 * cos((pi * t) / (6 * 3600)) + 210;
         q_in = q * SA_window;
-        q_out = (T_storage_i - T_AIR) / R;
-        dTdt = q_in/C- q_out/C;
+        q_out = (T_storage_i - T_AIR_OUT) / R;
+        dTdt = q_in/C - q_out/C;
         res = dTdt;
     end
 end
