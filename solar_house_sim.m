@@ -1,7 +1,7 @@
 function [Time,t_air_in] = solar_house_sim(w_thickness, esu_thickness)
     % HOUSE CONSTRUCTION PARAMETERS
     W_HEIGHT = 3.2; % Wall Height (m)
-    W_DEPTH = 5; % Building Depth (m) - calculated
+    W_DEPTH = 5; % Building Depth (m)
     W_LENGTH = 5.1; % Building Length (m)
     TOP_PANE_HEIGHT = 0.4;
     BOTTOM_PANE_HEIGHT = 0.2;
